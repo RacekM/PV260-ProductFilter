@@ -3,12 +3,60 @@ package cz.muni.fi.pv260.productfilter;
 
 import org.junit.Test;
 
+import static com.googlecode.catchexception.CatchException.caughtException;
+import static com.googlecode.catchexception.CatchException.verifyException;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.*;
 
 public class AtLeastNOfFilterTest {
 
     @Test
-    public void alwaysPass() {
-        assertTrue(true);
+    public void atLeastNOFilterThrowsIllegalArgumentException() throws Exception {
+        verifyException(() -> new AtLeastNOfFilter(0, mock(Filter.class)));
+        assertThat((Exception) caughtException())
+                .isInstanceOf(IllegalArgumentException.class);
     }
+
+    @Test
+    public void atLeastNOFilterThrowsFilterNeverSucceeds() throws Exception {
+        verifyException(() -> new AtLeastNOfFilter(10, mock(Filter.class)));
+        assertThat((Exception) caughtException())
+                .isInstanceOf(FilterNeverSucceeds.class);
+    }
+
+    @Test
+    public void passIfNFilterPasses() {
+        String testedInput = "TEST";
+        Filter[] filters = new Filter[]{mock(Filter.class), mock(Filter.class), mock(Filter.class), mock(Filter.class)};
+        when(filters[0].passes(any())).thenReturn(true);
+        when(filters[1].passes(any())).thenReturn(true);
+        when(filters[2].passes(any())).thenReturn(true);
+        when(filters[3].passes(any())).thenReturn(false);
+        AtLeastNOfFilter filter = new AtLeastNOfFilter(3, filters);
+
+        assertTrue(filter.passes(testedInput));
+        for (Filter f : filters) {
+            verify(f, times(1)).passes(testedInput);
+        }
+    }
+
+    @Test
+    public void failIfN_1FilterPasses() {
+        String testedInput = "TEST";
+        Filter[] filters = new Filter[]{mock(Filter.class), mock(Filter.class), mock(Filter.class), mock(Filter.class)};
+        when(filters[0].passes(any())).thenReturn(true);
+        when(filters[1].passes(any())).thenReturn(true);
+        when(filters[2].passes(any())).thenReturn(true);
+        when(filters[3].passes(any())).thenReturn(false);
+        AtLeastNOfFilter filter = new AtLeastNOfFilter(4, filters);
+
+        assertFalse(filter.passes(testedInput));
+        for (Filter f : filters) {
+            verify(f, times(1)).passes(testedInput);
+        }
+    }
+
 }
