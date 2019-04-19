@@ -9,8 +9,7 @@ import java.util.List;
 import static com.googlecode.catchexception.CatchException.caughtException;
 import static com.googlecode.catchexception.CatchException.verifyException;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
@@ -50,9 +49,18 @@ public class AtLeastNOfFilterTest {
         AtLeastNOfFilter filter = new AtLeastNOfFilter(3, filters);
 
         assertTrue(filter.passes(testedInput));
+
         for (Filter f : filters) {
             verify(f, times(1)).passes(testedInput);
         }
+
+        int numberOfPassedFilters = 0;
+        for (Filter f : filters) {
+            if (f.passes(testedInput)) {
+                numberOfPassedFilters++;
+            }
+        }
+        assertEquals(3, numberOfPassedFilters);
     }
 
     @Test
@@ -65,6 +73,15 @@ public class AtLeastNOfFilterTest {
         for (Filter f : filters) {
             verify(f, times(1)).passes(testedInput);
         }
+
+        int numberOfPassedFilters = 0;
+        for (Filter f : filters) {
+            if (f.passes(testedInput)) {
+                numberOfPassedFilters++;
+            }
+        }
+        assertEquals(3, numberOfPassedFilters);
+
     }
 
 }
