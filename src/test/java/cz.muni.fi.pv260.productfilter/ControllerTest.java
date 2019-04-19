@@ -34,7 +34,7 @@ public class ControllerTest {
         int filterPrice = 31;
         Input input = mock(Input.class);
         when(input.obtainProducts()).thenReturn(prepareProducts());
-        Output output = mock(Output.class);
+        Output output = new OutputStub();
         Logger logger = mock(Logger.class);
         Controller controller = new Controller(input, output, logger);
         controller.select(new PriceLessThanFilter(new BigDecimal(filterPrice)));
@@ -48,7 +48,7 @@ public class ControllerTest {
     public void controllerLogsException() throws ObtainFailedException {
         Input input = mock(Input.class);
         when(input.obtainProducts()).thenThrow(ObtainFailedException.class);
-        Output output = mock(Output.class);
+        Output output = new OutputStub();
         Logger logger = mock(Logger.class);
         Controller controller = new Controller(input, output, logger);
         controller.select(null);
