@@ -2,7 +2,10 @@ package cz.muni.fi.pv260.productfilter;
 
 import org.assertj.core.api.Condition;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.runners.MockitoJUnitRunner;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -12,18 +15,21 @@ import java.util.List;
 import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
+@RunWith(MockitoJUnitRunner.class)
 public class ControllerTest {
+
+    @Captor
+    private ArgumentCaptor<List<Product>> captor;
 
     @Test
     public void outputContainsAllProductsFulfillingFilters() throws ObtainFailedException {
-        int filterPrice = 31;
+        final int filterPrice = 31;
         Input input = mock(Input.class);
         when(input.obtainProducts()).thenReturn(prepareProducts());
         Output output = mock(Output.class);
         Controller controller = new Controller(input, output, mock(Logger.class));
         controller.select(new PriceLessThanFilter(new BigDecimal(filterPrice)));
 
-        ArgumentCaptor<List> captor = ArgumentCaptor.forClass(List.class);
         verify(output, times(1)).postSelectedProducts(captor.capture());
         List<Product> returnedProducts = captor.getValue();
         assertThat(returnedProducts).are(new Condition<>(p -> p.getPrice().compareTo(new BigDecimal(filterPrice)) <= 0, "all filtered products has price lower or equal to " + filterPrice));
@@ -31,7 +37,7 @@ public class ControllerTest {
 
     @Test
     public void loggerLogsSuccessInCorrectFormat() throws ObtainFailedException {
-        int filterPrice = 31;
+        final int filterPrice = 31;
         Input input = mock(Input.class);
         when(input.obtainProducts()).thenReturn(prepareProducts());
         Output output = new OutputStub();
@@ -47,7 +53,7 @@ public class ControllerTest {
     @Test
     public void controllerLogsException() throws ObtainFailedException {
         Input input = mock(Input.class);
-        when(input.obtainProducts()).thenThrow(ObtainFailedException.class);
+        when(input.obtainProducts()).thenThrow(new ObtainFailedException());
         Output output = new OutputStub();
         Logger logger = mock(Logger.class);
         Controller controller = new Controller(input, output, logger);
@@ -62,7 +68,7 @@ public class ControllerTest {
     @Test
     public void nothingIsReturnToOutputInCaseOfException() throws ObtainFailedException {
         Input input = mock(Input.class);
-        when(input.obtainProducts()).thenThrow(ObtainFailedException.class);
+        when(input.obtainProducts()).thenThrow(new ObtainFailedException());
         Output output = mock(Output.class);
         Logger logger = mock(Logger.class);
         Controller controller = new Controller(input, output, logger);

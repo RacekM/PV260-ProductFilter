@@ -1,7 +1,10 @@
 package cz.muni.fi.pv260.productfilter;
 
 
+import com.googlecode.zohhak.api.TestWith;
+import com.googlecode.zohhak.api.runners.ZohhakRunner;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,27 +16,85 @@ import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
+@RunWith(ZohhakRunner.class)
 public class AtLeastNOfFilterTest {
 
     @Test
-    public void atLeastNOFilterThrowsIllegalArgumentException() throws Exception {
-        verifyException(() -> new AtLeastNOfFilter(0, mock(Filter.class)));
+    public void atLeastNOFilterThrowsIllegalArgumentExceptionZeroN() throws Exception {
+        verifyException(() -> new AtLeastNOfFilter<Object>(0, mock(Filter.class)));
         assertThat((Exception) caughtException())
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
-    public void atLeastNOFilterThrowsFilterNeverSucceeds() throws Exception {
-        verifyException(() -> new AtLeastNOfFilter(10, mock(Filter.class)));
+    public void atLeastNOFilterThrowsIllegalArgumentExceptionNegativeN() throws Exception {
+        verifyException(() -> new AtLeastNOfFilter<Object>(-1, mock(Filter.class)));
+        assertThat((Exception) caughtException())
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    public void atLeastNOFilterThrowsFilterNeverSucceedsByOne() throws Exception {
+        verifyException(() -> new AtLeastNOfFilter<Object>(2, mock(Filter.class)));
         assertThat((Exception) caughtException())
                 .isInstanceOf(FilterNeverSucceeds.class);
     }
 
-    public static Filter[] prepareFilters(int numberOfFilters, int passingFilters) {
-        List<Filter> filters = new ArrayList<>();
+    @TestWith({
+            "3, 3",
+            "1, 4"
+    })
+    public void passIfAtLeastNFiltersPasses(final int atLeastPassingFilter, final int numberOfPassingFilters) {
+        String testedInput = "TEST";
+        Filter<Object>[] filters = prepareFilters(4, numberOfPassingFilters);
+
+        AtLeastNOfFilter<Object> filter = new AtLeastNOfFilter<>(atLeastPassingFilter, filters);
+
+        assertTrue(filter.passes(testedInput));
+
+        for (Filter<Object> f : filters) {
+            verify(f, times(1)).passes(testedInput);
+        }
+
+        int numberOfPassedFilters = 0;
+        for (Filter<Object> f : filters) {
+            if (f.passes(testedInput)) {
+                numberOfPassedFilters++;
+            }
+        }
+        assertEquals(numberOfPassingFilters, numberOfPassedFilters);
+    }
+
+
+    @TestWith({
+            "4,3",
+            "3,1"
+    })
+    public void failIfN_1FilterPasses(final int atLeastPassingFilter, final int numberOfPassingFilters) {
+        String testedInput = "TEST";
+        Filter<Object>[] filters = prepareFilters(5, numberOfPassingFilters);
+        AtLeastNOfFilter<Object> filter = new AtLeastNOfFilter<Object>(atLeastPassingFilter, filters);
+
+        assertFalse(filter.passes(testedInput));
+        for (Filter<Object> f : filters) {
+            verify(f, times(1)).passes(testedInput);
+        }
+
+        int numberOfPassedFilters = 0;
+        for (Filter<Object> f : filters) {
+            if (f.passes(testedInput)) {
+                numberOfPassedFilters++;
+            }
+        }
+        assertEquals(numberOfPassingFilters, numberOfPassedFilters);
+
+    }
+
+    private static Filter<Object>[] prepareFilters(int numberOfFilters, int passingFilters) {
+        List<Filter<Object>> filters = new ArrayList<>();
 
         for (int i = 0; i < numberOfFilters; i++) {
-            Filter filter = mock(Filter.class);
+            Filter<Object> filter = mock(Filter.class);
             when(filter.passes(any())).thenReturn(passingFilters-- > 0);
             filters.add(filter);
         }
@@ -41,47 +102,5 @@ public class AtLeastNOfFilterTest {
 
     }
 
-    @Test
-    public void passIfNFilterPasses() {
-        String testedInput = "TEST";
-        Filter[] filters = prepareFilters(4, 3);
-
-        AtLeastNOfFilter filter = new AtLeastNOfFilter(3, filters);
-
-        assertTrue(filter.passes(testedInput));
-
-        for (Filter f : filters) {
-            verify(f, times(1)).passes(testedInput);
-        }
-
-        int numberOfPassedFilters = 0;
-        for (Filter f : filters) {
-            if (f.passes(testedInput)) {
-                numberOfPassedFilters++;
-            }
-        }
-        assertEquals(3, numberOfPassedFilters);
-    }
-
-    @Test
-    public void failIfN_1FilterPasses() {
-        String testedInput = "TEST";
-        Filter[] filters = prepareFilters(4, 3);
-        AtLeastNOfFilter filter = new AtLeastNOfFilter(4, filters);
-
-        assertFalse(filter.passes(testedInput));
-        for (Filter f : filters) {
-            verify(f, times(1)).passes(testedInput);
-        }
-
-        int numberOfPassedFilters = 0;
-        for (Filter f : filters) {
-            if (f.passes(testedInput)) {
-                numberOfPassedFilters++;
-            }
-        }
-        assertEquals(3, numberOfPassedFilters);
-
-    }
 
 }
